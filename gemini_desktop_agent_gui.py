@@ -1,4 +1,10 @@
-import os, json, base64, time, threading, queue, subprocess
+import os
+import json
+import base64
+import time
+import threading
+import queue
+import subprocess
 import tkinter as tk
 import tkinter.scrolledtext as st
 from tkinter import messagebox
@@ -10,10 +16,12 @@ try:
     from google.genai import types as gtypes
 except Exception:  # pragma: no cover - fallback for older SDKs
     from google.generativeai import types as gtypes
+4a7825-codex/mejorar-funcionalidad-y-precisión-de-ia
+
 import sys
 import tempfile
 from io import BytesIO
-from PIL import Image  # Asegúrate de tener pillow instalado (pip install pillow)
+from PIL import Image  # Asegúrate de tener pillow instalado (pip install pillow)master
 
 # ─── CONFIGURACIÓN ──────────────────────────────────────────────────────────
 load_dotenv()
@@ -21,6 +29,12 @@ api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     raise RuntimeError("No se encontró la variable de entorno GEMINI_API_KEY. Por favor, crea un archivo .env con GEMINI_API_KEY=tu_clave.")
 genai.configure(api_key=api_key)
+
+# Requiere un entorno gráfico para utilizar pyautogui
+if not os.environ.get("DISPLAY"):
+    raise RuntimeError(
+        "La variable DISPLAY no está definida. Ejecute el programa en un entorno de escritorio."
+    )
 
 MODEL          = "gemini-2.0-flash"
 ALLOWED_ACTION = {
@@ -73,14 +87,20 @@ def ask_gemini(texto: str, img_b64: str) -> list[dict]:
     try:
         print("Enviando petición a Gemini...")
         model = genai.GenerativeModel(MODEL)
+ 4a7825-codex/mejorar-funcionalidad-y-precisión-de-ia
+
  9p6acd-codex/mejorar-funcionalidad-y-precisión-de-ia
+master
         img_bytes = base64.b64decode(img_b64)
         if hasattr(gtypes, "Part") and hasattr(gtypes.Part, "from_bytes"):
             image_part = gtypes.Part.from_bytes(img_bytes, mime_type="image/png")
         else:
             image_part = {"inline_data": {"mime_type": "image/png", "data": img_bytes}}
+4a7825-codex/mejorar-funcionalidad-y-precisión-de-ia
+
 
  master
+master
         response = model.generate_content(
             contents=[
                 SYSTEM_PROMPT,
@@ -265,7 +285,3 @@ if __name__ == "__main__":
         DesktopAgentGUI().run()
     except Exception as e:
         print(f"\nERROR: {e}")
-        input("\nPresione Enter para cerrar...")
-    finally:
-        if sys.stdin.isatty():
-            input("\nPresione Enter para cerrar...")

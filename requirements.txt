@@ -1,8 +1,12 @@
+ 4a7825-codex/mejorar-funcionalidad-y-precisión-de-ia
+google-generativeai>=0.8
+
  9p6acd-codex/mejorar-funcionalidad-y-precisión-de-ia
 google-generativeai>=0.8
 
 google-generativeai>=1.0
  master
+master
 python-dotenv
 pyautogui
 pillow
