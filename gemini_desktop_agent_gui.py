@@ -73,11 +73,14 @@ def ask_gemini(texto: str, img_b64: str) -> list[dict]:
     try:
         print("Enviando petición a Gemini...")
         model = genai.GenerativeModel(MODEL)
+ 9p6acd-codex/mejorar-funcionalidad-y-precisión-de-ia
         img_bytes = base64.b64decode(img_b64)
         if hasattr(gtypes, "Part") and hasattr(gtypes.Part, "from_bytes"):
             image_part = gtypes.Part.from_bytes(img_bytes, mime_type="image/png")
         else:
             image_part = {"inline_data": {"mime_type": "image/png", "data": img_bytes}}
+
+ master
         response = model.generate_content(
             contents=[
                 SYSTEM_PROMPT,
