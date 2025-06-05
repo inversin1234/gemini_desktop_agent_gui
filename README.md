@@ -8,12 +8,17 @@ Esta aplicación permite controlar el escritorio de forma automática mediante i
 - Dependencias listadas en `requirements.txt`
 - Una clave de API de Gemini configurada en el archivo `.env`:
 
+4a7825-codex/mejorar-funcionalidad-y-precisión-de-ia
  ```env
  GEMINI_API_KEY=tu_clave
  ```
 
 Es necesario ejecutar el programa en un entorno de escritorio donde la variable
 `DISPLAY` esté disponible, ya que `pyautogui` requiere acceso a la pantalla.
+
+```env
+GEMINI_API_KEY=tu_clave
+master
 
 ## Uso
 

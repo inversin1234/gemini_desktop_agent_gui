@@ -16,6 +16,12 @@ try:
     from google.genai import types as gtypes
 except Exception:  # pragma: no cover - fallback for older SDKs
     from google.generativeai import types as gtypes
+4a7825-codex/mejorar-funcionalidad-y-precisión-de-ia
+
+import sys
+import tempfile
+from io import BytesIO
+from PIL import Image  # Asegúrate de tener pillow instalado (pip install pillow)master
 
 # ─── CONFIGURACIÓN ──────────────────────────────────────────────────────────
 load_dotenv()
@@ -81,11 +87,20 @@ def ask_gemini(texto: str, img_b64: str) -> list[dict]:
     try:
         print("Enviando petición a Gemini...")
         model = genai.GenerativeModel(MODEL)
+ 4a7825-codex/mejorar-funcionalidad-y-precisión-de-ia
+
+ 9p6acd-codex/mejorar-funcionalidad-y-precisión-de-ia
+master
         img_bytes = base64.b64decode(img_b64)
         if hasattr(gtypes, "Part") and hasattr(gtypes.Part, "from_bytes"):
             image_part = gtypes.Part.from_bytes(img_bytes, mime_type="image/png")
         else:
             image_part = {"inline_data": {"mime_type": "image/png", "data": img_bytes}}
+4a7825-codex/mejorar-funcionalidad-y-precisión-de-ia
+
+
+ master
+master
         response = model.generate_content(
             contents=[
                 SYSTEM_PROMPT,
