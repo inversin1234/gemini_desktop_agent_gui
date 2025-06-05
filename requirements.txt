@@ -1,0 +1,4 @@
+google-generativeai>=1.0
+python-dotenv
+pyautogui
+pillow
