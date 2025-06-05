@@ -19,10 +19,15 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 MODEL          = "gemini-2.0-flash"
-ALLOWED_ACTION = {"move_mouse", "click_mouse", "write", "wait", "open_app"}
-SYSTEM_PROMPT  = ("Devuelve SOLO JSON array con objetos {action,x,y,rel_x,rel_y,"
-                  "text,seconds}. Acciones válidas: move_mouse,click_mouse,"
-                  "write,wait,open_app.")
+ALLOWED_ACTION = {
+    "move_mouse", "click_mouse", "write", "wait", "open_app",
+    "scroll", "press_key", "hotkey"
+}
+SYSTEM_PROMPT = (
+    "Devuelve SOLO JSON array con objetos {action,x,y,rel_x,rel_y,text,seconds," 
+    "amount}. Acciones válidas: move_mouse,click_mouse,write,wait,open_app," 
+    "scroll,press_key,hotkey."
+)
 
 # ─── UTILIDADES ─────────────────────────────────────────────────────────────
 def screen_b64() -> str:
@@ -63,7 +68,7 @@ def screen_b64() -> str:
 def ask_gemini(texto: str, img_b64: str) -> list[dict]:
     try:
         print("Enviando petición a Gemini...")
-        model = genai.GenerativeModel("gemini-2.0-flash")  # o gemini-2.0-pro si tienes acceso
+        model = genai.GenerativeModel(MODEL)
         response = model.generate_content(
             contents=[
                 SYSTEM_PROMPT,
@@ -85,7 +90,8 @@ def ask_gemini(texto: str, img_b64: str) -> list[dict]:
                                 "rel_x": {"type": "number"},
                                 "rel_y": {"type": "number"},
                                 "text": {"type": "string"},
-                                "seconds": {"type": "number"}
+                                "seconds": {"type": "number"},
+                                "amount": {"type": "integer"}
                             },
                             "required": ["action"]
                         }
@@ -127,6 +133,14 @@ def run_actions(steps: list[dict], log_fn):
                 time.sleep(s.get("seconds", 1))
             case "open_app":
                 subprocess.Popen(s["text"])
+            case "scroll":
+                pyautogui.scroll(int(s.get("amount", 0)))
+            case "press_key":
+                pyautogui.press(s.get("text", ""))
+            case "hotkey":
+                keys = s.get("text", "").split("+")
+                if all(keys):
+                    pyautogui.hotkey(*keys)
 
 # ─── GUI (Tkinter) ─────────────────────────────────────────────────────────
 class DesktopAgentGUI:
