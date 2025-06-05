@@ -1,15 +1,21 @@
-import os, json, base64, time, threading, queue, subprocess
+import os
+import json
+import base64
+import time
+import threading
+import queue
+import subprocess
 import tkinter as tk
 import tkinter.scrolledtext as st
 from tkinter import messagebox
 from dotenv import load_dotenv
 import pyautogui  # Eliminamos la dependencia de mss
 import google.generativeai as genai
-from google.genai import types     # SDK ≥ v1.0
-import sys
-import tempfile
-from io import BytesIO
-from PIL import Image  # Asegúrate de tener pillow instalado (pip install pillow)
+try:
+    # SDK ≥ 1.0
+    from google.genai import types as gtypes
+except Exception:  # pragma: no cover - fallback for older SDKs
+    from google.generativeai import types as gtypes
 
 # ─── CONFIGURACIÓN ──────────────────────────────────────────────────────────
 load_dotenv()
@@ -18,11 +24,24 @@ if not api_key:
     raise RuntimeError("No se encontró la variable de entorno GEMINI_API_KEY. Por favor, crea un archivo .env con GEMINI_API_KEY=tu_clave.")
 genai.configure(api_key=api_key)
 
+# Requiere un entorno gráfico para utilizar pyautogui
+# En Linux es necesario que la variable DISPLAY esté disponible, mientras que en
+# Windows no se utiliza.
+if os.name != "nt" and not os.environ.get("DISPLAY"):
+    raise RuntimeError(
+        "No se detectó un entorno gráfico. Ejecuta el programa en una sesión con acceso a pantalla."
+    )
+
 MODEL          = "gemini-2.0-flash"
-ALLOWED_ACTION = {"move_mouse", "click_mouse", "write", "wait", "open_app"}
-SYSTEM_PROMPT  = ("Devuelve SOLO JSON array con objetos {action,x,y,rel_x,rel_y,"
-                  "text,seconds}. Acciones válidas: move_mouse,click_mouse,"
-                  "write,wait,open_app.")
+ALLOWED_ACTION = {
+    "move_mouse", "click_mouse", "write", "wait", "open_app",
+    "scroll", "press_key", "hotkey"
+}
+SYSTEM_PROMPT = (
+    "Devuelve SOLO JSON array con objetos {action,x,y,rel_x,rel_y,text,seconds," 
+    "amount}. Acciones válidas: move_mouse,click_mouse,write,wait,open_app," 
+    "scroll,press_key,hotkey."
+)
 
 # ─── UTILIDADES ─────────────────────────────────────────────────────────────
 def screen_b64() -> str:
@@ -63,11 +82,16 @@ def screen_b64() -> str:
 def ask_gemini(texto: str, img_b64: str) -> list[dict]:
     try:
         print("Enviando petición a Gemini...")
-        model = genai.GenerativeModel("gemini-2.0-flash")  # o gemini-2.0-pro si tienes acceso
+        model = genai.GenerativeModel(MODEL)
+        img_bytes = base64.b64decode(img_b64)
+        if hasattr(gtypes, "Part") and hasattr(gtypes.Part, "from_bytes"):
+            image_part = gtypes.Part.from_bytes(img_bytes, mime_type="image/png")
+        else:
+            image_part = {"inline_data": {"mime_type": "image/png", "data": img_bytes}}
         response = model.generate_content(
             contents=[
                 SYSTEM_PROMPT,
-                types.Part.from_bytes(base64.b64decode(img_b64), mime_type="image/png"),
+                image_part,
                 texto
             ],
             generation_config={"temperature": 0},
@@ -85,7 +109,8 @@ def ask_gemini(texto: str, img_b64: str) -> list[dict]:
                                 "rel_x": {"type": "number"},
                                 "rel_y": {"type": "number"},
                                 "text": {"type": "string"},
-                                "seconds": {"type": "number"}
+                                "seconds": {"type": "number"},
+                                "amount": {"type": "integer"}
                             },
                             "required": ["action"]
                         }
@@ -127,6 +152,14 @@ def run_actions(steps: list[dict], log_fn):
                 time.sleep(s.get("seconds", 1))
             case "open_app":
                 subprocess.Popen(s["text"])
+            case "scroll":
+                pyautogui.scroll(int(s.get("amount", 0)))
+            case "press_key":
+                pyautogui.press(s.get("text", ""))
+            case "hotkey":
+                keys = s.get("text", "").split("+")
+                if all(keys):
+                    pyautogui.hotkey(*keys)
 
 # ─── GUI (Tkinter) ─────────────────────────────────────────────────────────
 class DesktopAgentGUI:
@@ -239,7 +272,3 @@ if __name__ == "__main__":
         DesktopAgentGUI().run()
     except Exception as e:
         print(f"\nERROR: {e}")
-        input("\nPresione Enter para cerrar...")
-    finally:
-        if sys.stdin.isatty():
-            input("\nPresione Enter para cerrar...")
